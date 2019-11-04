@@ -1,0 +1,10 @@
+{
+  "name": "standup_timer",
+  "version": "1.0.0",
+  "description": "make taking turns easier",
+  "main": "index.js",
+  "repository": "https://github.com/thomasjachmann/standup_timer",
+  "author": "Thomas Jachmann",
+  "license": "MIT",
+  "private": false
+}
