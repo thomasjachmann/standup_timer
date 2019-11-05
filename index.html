@@ -1,0 +1,201 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="x-ua-compatible" content="ie=edge" />
+    <title>Standup Timer</title>
+    <meta name="description" content="countdown timer" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+    <style>
+      html, body {
+        margin: 0;
+        box-sizing: border-box;
+        height: 100vh;
+        overflow: hidden;
+      }
+      html {
+        padding: 0;
+        background: #006495;
+      }
+      body {
+        font-family: Arial, sans-serif;
+        color: white;
+      }
+
+      #app, #progress {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+      }
+      #progress {
+        z-index: -5;
+        background: #004c70;
+        transition: width 0.5s;
+      }
+      #progress.expiring, #progress.expired {
+        transition: width 0.5s, background-color 0.5s;
+      }
+      #progress.expiring { background: #f4d00c; }
+      #progress.expired { background: #f2635f; }
+
+      #participants {
+        list-style-type: none;
+        margin: 0;
+        padding: 0;
+      }
+      #participants li {
+        background: #74828f;
+        color: #525564;
+        text-align: center;
+        margin: 0.5em;
+        padding: 0 0.5em;
+        height: 2em;
+        line-height: 2em;
+      }
+      #participants li.active {
+        background: #525564;
+        color: #74828f;
+      }
+
+      #participants li, .action {
+        cursor: pointer;
+      }
+
+      #info {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+      }
+
+      #speaker   { font-size: 10vw; }
+      #remainder { font-size: 20vw; }
+      .action    { font-size: 5vw; }
+
+      .action.urgent { animation: shake 0.5s infinite; }
+      @keyframes shake {
+        10%, 90%      { transform: translate3d(-1px, 0, 0) rotate(-1deg); }
+        20%, 80%      { transform: translate3d(2px, 0, 0)  rotate(-2deg); }
+        30%, 50%, 70% { transform: translate3d(-4px, 0, 0) rotate(-2deg); }
+        40%, 60%      { transform: translate3d(4px, 0, 0)  rotate(+1deg); }
+      }
+
+      [v-cloak] { display: none; }
+    </style>
+  </head>
+  <body>
+    <div id="app" v-cloak>
+      <ul id="participants">
+        <li v-for="(participant, index) in participants"
+            v-bind:class="{ active: index == speaker }"
+            v-on:click="switchSpeaker(index)">
+          {{ participant }}
+        </li>
+      </ul>
+      <div id="progress"
+           v-if="running"
+           v-bind:class="{ expiring: progress > 90, expired: progress >= 100 }"
+           v-bind:style="{ width: progress + '%' }">
+      </div>
+      <div id="info">
+        <div id="speaker"
+             v-if="running">
+          {{ participants[speaker] }}
+        </div>
+        <div id="remainder"
+             v-if="running">
+          {{ remainder }}
+        </div>
+        <div class="action"
+             v-if="running && speaker < participants.length - 1"
+             v-bind:class="{ urgent: progress >= 100 }"
+             v-on:click="switchSpeaker(speaker + 1)">
+          next: {{ participants[speaker + 1] }}
+        </div>
+        <div class="action"
+             v-if="running && speaker >= participants.length - 1"
+             v-bind:class="{ urgent: progress >= 100 }"
+             v-on:click="deinit()">
+          done
+        </div>
+        <div class="action"
+             v-if="!running"
+             v-on:click="switchSpeaker(0)">
+          start: {{ participants[0] }}
+        </div>
+      </div>
+    </div>
+
+    <script src="node_modules/vue/dist/vue.min.js"></script>
+    <script>
+      var app = new Vue({
+        el: '#app',
+        data: {
+          running: false,
+          length: 0,
+          participants: [],
+          speakerLength: 0,
+          speaker: null,
+          progress: 0
+        },
+        methods: {
+          init: function(length, participants) {
+            this.length = length;
+            this.participants = participants;
+            this.participants.sort((a, b) => { return 0.5 - Math.random() });
+            this.speakerLength = length / participants.length;
+          },
+          deinit: function() {
+            this.stop();
+            this.speaker = null;
+            this.running = false;
+          },
+          start: function() {
+            this.stop();
+            this.running = true;
+            this.timer = setInterval(() => {
+              let spoken = new Date().getTime() - this.speakerSince;
+              this.progress = spoken / this.speakerLength * 100;
+            }, 1000);
+          },
+          stop: function() {
+            if (this.timer) {
+              clearInterval(this.timer);
+            }
+          },
+          switchSpeaker: function(speaker) {
+            this.speaker = speaker;
+            this.progress = 0;
+            this.speakerSince = new Date().getTime();
+            this.start();
+          }
+        },
+        computed: {
+          remainder: function() {
+            var remainder = Math.ceil(this.speakerLength / 1000 * (100 - this.progress) / 100);
+            let sign = remainder < 0 ? '-' : '';
+            if (sign == '-') remainder = - remainder;
+
+            var seconds = Math.floor(remainder % 60),
+                minutes = Math.floor((remainder / 60) % 60);
+            seconds = (seconds < 10) ? '0' + seconds : seconds;
+            minutes = (minutes < 10) ? '0' + minutes : minutes;
+
+            if (this.speakerLength >= 3600000 - 1000) {
+              hours = Math.floor((remainder / 3600) % 24);
+              hours = (hours < 10) ? '0' + hours   : hours;
+              return sign + hours + ':' + minutes + ':' + seconds;
+            } else {
+              return sign + minutes + ':' + seconds;
+            }
+          }
+        }
+      });
+
+      let participants = ['Anna', 'Cora', 'Enrico', 'Khang', 'Mathias', 'Michael', 'Moritz', 'Sebastian', 'Thomas'];
+      app.init(participants.length * 60 * 1000, participants);
+    </script>
+  </body>
+</html>
