@@ -8,7 +8,6 @@
   "license": "MIT",
   "private": false,
   "dependencies": {
-    "vue": "^2.6.10",
-    "vuejs-progress-bar": "^1.1.1"
+    "vue": "^2.6.10"
   }
 }
