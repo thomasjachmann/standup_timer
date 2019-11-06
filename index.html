@@ -121,9 +121,13 @@
           done
         </div>
         <div class="action"
-             v-if="!running"
+             v-if="!running && participants.length > 0"
              v-on:click="switchSpeaker(0)">
           start: {{ participants[0] }}
+        </div>
+        <div class="action"
+             v-if="!running && participants.length == 0">
+          no participants
         </div>
       </div>
     </div>
@@ -203,19 +207,7 @@
         }
       });
 
-      let participants = [
-        'Andy',
-        'Anna',
-        'Christian',
-        'Cora',
-        'Enrico',
-        'Khang',
-        'Mathias',
-        'Michael',
-        'Moritz',
-        'Sebastian',
-        'Thomas'
-      ];
+      let participants = location.hash == '' ? [] : location.hash.replace('#', '').split(',')
       app.init(participants.length * 60 * 1000, participants);
     </script>
   </body>
