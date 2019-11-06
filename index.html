@@ -130,6 +130,16 @@
 
     <script src="node_modules/vue/dist/vue.min.js"></script>
     <script>
+      Array.prototype.randomize = function() {
+        let buffer = Array.from(this),
+            randomized = [];
+        while (buffer.length > 0) {
+          let randomIndex = Math.floor(Math.random() * buffer.length);
+          randomized.push(buffer.splice(randomIndex, 1)[0]);
+        }
+        return randomized;
+      };
+
       var app = new Vue({
         el: '#app',
         data: {
@@ -143,8 +153,7 @@
         methods: {
           init: function(length, participants) {
             this.length = length;
-            this.participants = participants;
-            this.participants.sort((a, b) => { return 0.5 - Math.random() });
+            this.participants = participants.randomize();
             this.speakerLength = length / participants.length;
           },
           deinit: function() {
