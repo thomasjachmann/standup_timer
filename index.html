@@ -207,8 +207,11 @@
         }
       });
 
-      let participants = location.hash == '' ? [] : location.hash.replace('#', '').split(',')
-      app.init(participants.length * 60 * 1000, participants);
+      let params = new URLSearchParams(location.search);
+      let length = Number.parseInt(params.get('length'));
+      let participants = params.get('participants');
+
+      app.init((isNaN(length) ? 1 : length) * 60 * 1000, (participants == undefined) ? [] : participants.split(','));
     </script>
   </body>
 </html>
