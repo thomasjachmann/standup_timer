@@ -57,6 +57,9 @@
         background: #525564;
         color: #74828f;
       }
+      #participants li.inactive {
+        color: #828f9a;
+      }
 
       #participants li, .action {
         cursor: pointer;
@@ -87,11 +90,18 @@
   </head>
   <body>
     <div id="app" v-cloak>
-      <ul id="participants">
+      <ul id="participants" v-if="!running">
         <li v-for="(participant, index) in participants"
+            v-bind:class="{ inactive: !participant.active }"
+            v-on:click="participant.active = !participant.active">
+          {{ participant.name }}
+        </li>
+      </ul>
+      <ul id="participants" v-if="running">
+        <li v-for="(participant, index) in activeParticipants"
             v-bind:class="{ active: index == speaker }"
             v-on:click="switchSpeaker(index)">
-          {{ participant }}
+          {{ participant.name }}
         </li>
       </ul>
       <div id="progress"
@@ -102,31 +112,31 @@
       <div id="info">
         <div id="speaker"
              v-if="running">
-          {{ participants[speaker] }}
+          {{ activeParticipants[speaker].name }}
         </div>
         <div id="remainder"
              v-if="running">
           {{ remainder }}
         </div>
         <div class="action"
-             v-if="running && speaker < participants.length - 1"
+             v-if="running && speaker < activeParticipants.length - 1"
              v-bind:class="{ urgent: progress >= 100 }"
              v-on:click="switchSpeaker(speaker + 1)">
-          next: {{ participants[speaker + 1] }}
+          next: {{ activeParticipants[speaker + 1].name }}
         </div>
         <div class="action"
-             v-if="running && speaker >= participants.length - 1"
+             v-if="running && speaker >= activeParticipants.length - 1"
              v-bind:class="{ urgent: progress >= 100 }"
              v-on:click="deinit()">
           done
         </div>
         <div class="action"
-             v-if="!running && participants.length > 0"
+             v-if="!running && activeParticipants.length > 0"
              v-on:click="switchSpeaker(0)">
-          start: {{ participants[0] }}
+          start: {{ activeParticipants[0].name }}
         </div>
         <div class="action"
-             v-if="!running && participants.length == 0">
+             v-if="!running && activeParticipants.length == 0">
           no participants
         </div>
       </div>
@@ -157,8 +167,9 @@
         methods: {
           init: function(length, participants) {
             this.length = length;
-            this.participants = participants.randomize();
-            this.speakerLength = length / participants.length;
+            this.participants = participants.randomize().map((name) => {
+              return { name: name, active: true };
+            });
           },
           deinit: function() {
             this.stop();
@@ -168,6 +179,7 @@
           start: function() {
             this.stop();
             this.running = true;
+            this.speakerLength = this.length / this.activeParticipants.length;
             this.timer = setInterval(() => {
               let spoken = new Date().getTime() - this.speakerSince;
               this.progress = spoken / this.speakerLength * 100;
@@ -186,6 +198,9 @@
           }
         },
         computed: {
+          activeParticipants: function() {
+            return this.participants.filter(p => p.active);
+          },
           remainder: function() {
             var remainder = Math.ceil(this.speakerLength / 1000 * (100 - this.progress) / 100);
             let sign = remainder < 0 ? '-' : '';
